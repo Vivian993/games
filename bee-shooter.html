@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>蜜蜂大作戰｜因數倍數射擊遊戲</title>
+<link rel="apple-touch-icon" href="custom-icon.png">
+<link rel="icon" type="image/png" href="custom-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#120F33; --bg-deep2:#1D1854; --bg-deep3:#2A1F6B;
+    --panel:#FFFFFF; --panel-soft:#F4F1FF;
+    --ink:#221B4D; --ink-soft:#726B9C;
+    --teal:#2DD4BF; --teal-deep:#159C8C;
+    --amber:#FDBA3B; --amber-deep:#E8940A;
+    --pink:#FF6FA5; --pink-deep:#E84A85;
+    --violet:#8B7CF6; --violet-deep:#6952E0;
+    --star:#FFE066; --danger:#FF6B6B; --success:#3DDC97;
+    --font-display:'Baloo 2','Noto Sans TC',sans-serif;
+    --font-body:'Noto Sans TC',sans-serif;
+    --shadow-panel:0 20px 45px -12px rgba(18,15,51,0.35), 0 4px 12px rgba(18,15,51,0.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-body);
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(139,124,246,0.35), transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(255,111,165,0.18), transparent 50%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep2) 55%, var(--bg-deep3) 100%);
+    color:var(--ink); min-height:100vh; overflow-x:hidden; position:relative;
+  }
+  body.shake{animation:screenshake .35s ease;}
+  @keyframes screenshake{0%,100%{transform:translate(0,0);}20%{transform:translate(-6px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-4px,2px);}80%{transform:translate(4px,-2px);}}
+  .stars-bg{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  .star-dot{position:absolute; background:#fff; border-radius:50%; opacity:0.7; animation:twinkle 3s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(0.8);} 50%{opacity:.9; transform:scale(1.15);}}
+
+  #app{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; max-width:520px; margin:0 auto; padding:18px 16px 32px;}
+
+  .topnav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .icon-btn{width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; text-decoration:none; flex-shrink:0;}
+  .page-title{font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.15rem; text-shadow:0 3px 10px rgba(0,0,0,0.3);}
+  .best-pill{display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; font-family:var(--font-display); font-weight:700; padding:7px 12px; border-radius:100px; font-size:0.85rem;}
+
+  .card{background:var(--panel); border-radius:26px; padding:22px; box-shadow:var(--shadow-panel);}
+
+  /* START */
+  .start-emoji{font-size:3.6rem; text-align:center; margin-bottom:6px;}
+  .start-title{font-family:var(--font-display); font-weight:800; font-size:1.35rem; text-align:center; color:var(--ink); margin-bottom:8px;}
+  .start-desc{color:var(--ink-soft); font-size:0.88rem; line-height:1.7; margin-bottom:14px;}
+  .legend{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px;}
+  .legend-item{background:var(--panel-soft); border-radius:12px; padding:10px 4px; text-align:center;}
+  .legend-item .li-emoji{font-size:1.5rem; display:block;}
+  .legend-item .li-label{font-size:0.65rem; color:var(--ink-soft); font-weight:700; margin-top:3px; display:block; line-height:1.3;}
+  .btn-primary{
+    width:100%; font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:#fff;
+    background:linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%); border:none; border-radius:100px; padding:16px 0;
+    box-shadow:0 6px 0 var(--teal-deep); cursor:pointer;
+  }
+  .btn-primary:active{transform:translateY(4px); box-shadow:0 2px 0 var(--teal-deep);}
+
+  /* HUD */
+  .hud-row{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .hearts{display:flex; gap:3px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:100px; padding:8px 12px;}
+  .heart{font-size:1.15rem; filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3));}
+  .heart.empty{opacity:0.25;}
+  .hud-pill{flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:8px 6px; text-align:center; color:#fff;}
+  .hud-pill .hud-num{font-family:var(--font-display); font-weight:800; font-size:1.2rem; display:block; line-height:1.1;}
+  .hud-pill .hud-label{font-size:0.6rem; color:#C9C3F0;}
+  .hud-pill.timer-warn .hud-num{color:var(--danger); animation:pulse-warn .5s ease infinite;}
+  @keyframes pulse-warn{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
+  .shield-badge{display:inline-flex; align-items:center; gap:3px; background:rgba(139,255,247,0.18); border:1px solid rgba(139,255,247,0.4); color:#8BFFF7; font-size:0.72rem; font-weight:700; padding:4px 9px; border-radius:100px;}
+
+  .condition-banner{
+    background:linear-gradient(155deg,#FFD86B,#FF9F6B); color:#5A3200; font-weight:700; font-size:0.9rem;
+    text-align:center; padding:10px 14px; border-radius:14px; margin-bottom:10px; box-shadow:0 4px 10px -4px rgba(255,159,107,0.6);
+    transition:transform .2s ease;
+  }
+  .condition-banner.flash{animation:banner-flash .6s ease;}
+  @keyframes banner-flash{0%{transform:scale(1);}30%{transform:scale(1.08); background:linear-gradient(155deg,#8B7CF6,#FF6FA5); color:#fff;}100%{transform:scale(1);}}
+
+  .combo-banner{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:20;
+    font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.3rem;
+    background:linear-gradient(155deg,var(--pink),var(--violet)); padding:6px 18px; border-radius:100px;
+    box-shadow:0 6px 16px -4px rgba(139,124,246,0.6); animation:combo-pop .7s ease forwards; pointer-events:none;
+  }
+  @keyframes combo-pop{0%{transform:translateX(-50%) scale(0.4); opacity:0;}30%{transform:translateX(-50%) scale(1.15); opacity:1;}100%{transform:translateX(-50%) scale(1) translateY(-10px); opacity:0;}}
+
+  .bee-sky{
+    position:relative; height:min(58vh, 480px); border-radius:24px; overflow:hidden;
+    background:linear-gradient(180deg,#5B8DEF 0%, #7FB2F0 40%, #BFE3FF 100%);
+    border:3px solid rgba(255,255,255,0.5); box-shadow:var(--shadow-panel);
+  }
+  .bee-sky.multiplier-on{box-shadow:0 0 0 4px var(--star), var(--shadow-panel);}
+  .cloud{position:absolute; background:rgba(255,255,255,0.55); border-radius:50px; filter:blur(1px);}
+  .flash-overlay{position:absolute; inset:0; background:rgba(255,60,60,0.35); z-index:15; pointer-events:none; opacity:0; animation:flash-hit .4s ease;}
+  @keyframes flash-hit{0%{opacity:0.7;}100%{opacity:0;}}
+
+  .entity{
+    position:absolute; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; font-size:1.1rem; cursor:pointer; user-select:none;
+  }
+  .entity.bee{
+    color:#4A2E00; background:radial-gradient(circle at 35% 30%, #FFE066, #FDBA3B 65%, #E8940A 100%);
+    box-shadow:0 6px 12px -3px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.15); border:3px solid #3D2600;
+  }
+  .entity.bee::before{content:'';position:absolute; top:-8px; left:8px; width:14px; height:10px; background:rgba(255,255,255,0.75); border-radius:50% 50% 50% 0; transform:rotate(-15deg);}
+  .entity.bee::after{content:'';position:absolute; top:-8px; right:8px; width:14px; height:10px; background:rgba(255,255,255,0.75); border-radius:50% 50% 0 50%; transform:rotate(15deg);}
+  .entity.item{font-size:1.9rem; background:none; border:none; box-shadow:none;}
+  .entity.bomb{filter:drop-shadow(0 0 8px rgba(255,60,60,0.7));}
+  .entity.pop{animation:bee-pop .3s ease forwards;}
+  .entity.badpop{animation:bee-badpop .35s ease forwards;}
+  @keyframes bee-pop{to{transform:scale(1.8); opacity:0;}}
+  @keyframes bee-badpop{0%{transform:scale(1);}40%{transform:scale(0.85) rotate(-10deg);}100%{transform:scale(0.4) rotate(20deg); opacity:0;}}
+
+  .laser-beam{position:absolute; height:4px; background:linear-gradient(90deg,#fff,#FDBA3B); transform-origin:0 50%; z-index:10; border-radius:4px; box-shadow:0 0 10px #FFE066, 0 0 4px #fff; pointer-events:none;}
+  .cannon{position:absolute; bottom:6px; left:50%; transform:translateX(-50%); font-size:2.2rem; z-index:5; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.35));}
+  .float-txt{position:absolute; font-family:var(--font-display); font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,0.4); font-size:1.05rem; pointer-events:none; z-index:12; animation:float-up .75s ease forwards;}
+  @keyframes float-up{to{transform:translateY(-42px); opacity:0;}}
+
+  /* SUMMARY */
+  .summary-emoji{font-size:3.4rem; text-align:center;}
+  .summary-title{font-family:var(--font-display); font-weight:800; font-size:1.3rem; text-align:center; color:var(--ink); margin:4px 0 10px;}
+  .summary-stars{display:flex; gap:10px; justify-content:center; margin-bottom:14px;}
+  .summary-stars span{font-size:2.2rem; color:#E4E0F7;}
+  .summary-stars span.earned{color:var(--star); animation:star-pop .5s ease backwards;}
+  .summary-stars span.earned:nth-child(1){animation-delay:.1s;}
+  .summary-stars span.earned:nth-child(2){animation-delay:.25s;}
+  .summary-stars span.earned:nth-child(3){animation-delay:.4s;}
+  @keyframes star-pop{0%{transform:scale(0) rotate(-30deg); opacity:0;}70%{transform:scale(1.25) rotate(8deg);}100%{transform:scale(1) rotate(0); opacity:1;}}
+  .summary-stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px;}
+  .summary-stat{background:var(--panel-soft); border-radius:14px; padding:12px 4px; text-align:center;}
+  .summary-stat .s-num{font-family:var(--font-display); font-weight:800; font-size:1.35rem; color:var(--violet-deep); display:block;}
+  .summary-stat .s-label{font-size:0.65rem; color:var(--ink-soft);}
+  .btn-row{display:flex; gap:10px;}
+  .btn-secondary{flex:1; text-align:center; font-family:var(--font-display); font-weight:700; font-size:0.95rem; color:var(--violet-deep); background:var(--panel-soft); border:none; border-radius:100px; padding:14px 0; cursor:pointer; text-decoration:none;}
+
+  .confetti-piece{position:fixed; top:-20px; z-index:50; border-radius:2px; pointer-events:none; animation:confetti-fall linear forwards;}
+  @keyframes confetti-fall{to{transform:translateY(110vh) rotate(600deg); opacity:0.3;}}
+</style>
+</head>
+<body>
+<div class="stars-bg" id="starsBg"></div>
+
+<div id="app">
+  <div class="topnav">
+    <a class="icon-btn" href="galaxy-game.html" title="回主遊戲">←</a>
+    <div class="page-title">🐝 蜜蜂大作戰</div>
+    <div class="best-pill">🏆 <span id="bestScore">0</span></div>
+  </div>
+
+  <div id="gameRoot"></div>
+</div>
+
+<script>
+/* ============ 數學工具 ============ */
+function factorsOf(n){ const f=[]; for(let i=1;i<=n;i++){ if(n%i===0) f.push(i);} return f; }
+function isPrime(n){ if(n<2) return false; for(let i=2;i*i<=n;i++){ if(n%i===0) return false;} return true; }
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randChoice(arr){ return arr[randInt(0,arr.length-1)]; }
+
+/* ============ 星空背景 ============ */
+(function buildStars(){
+  const el = document.getElementById('starsBg');
+  let html='';
+  for(let i=0;i<50;i++){
+    const size=(Math.random()*2.2+1).toFixed(1), top=(Math.random()*100).toFixed(2), left=(Math.random()*100).toFixed(2), delay=(Math.random()*3).toFixed(2);
+    html += `<div class="star-dot" style="width:${size}px;height:${size}px;top:${top}%;left:${left}%;animation-delay:${delay}s;"></div>`;
+  }
+  el.innerHTML = html;
+})();
+
+/* ============ 音效系統 ============ */
+let audioCtx;
+function ensureAudio(){ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){audioCtx.resume();} }
+function tone(freqStart, freqEnd, duration, type, gainStart, delay){
+  const t = audioCtx.currentTime + (delay||0);
+  const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, t);
+  if(freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd,1), t+duration);
+  gain.gain.setValueAtTime(gainStart!==undefined?gainStart:0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.01, t+duration);
+  osc.start(t); osc.stop(t+duration);
+}
+function playSound(type){
+  try{
+    ensureAudio();
+    if(type==='laser'){ tone(1250,280,0.11,'sawtooth',0.14); }
+    else if(type==='pop'){ tone(700,1300,0.14,'triangle',0.22); }
+    else if(type==='buzz'){ tone(200,150,0.18,'sawtooth',0.18); }
+    else if(type==='explosion'){ tone(160,40,0.35,'sawtooth',0.3); tone(90,30,0.4,'square',0.2,0.05); }
+    else if(type==='lifeup'){ tone(500,700,0.12,'triangle',0.22); tone(700,1000,0.16,'triangle',0.22,0.11); }
+    else if(type==='lifelost'){ tone(400,180,0.3,'sawtooth',0.22); }
+    else if(type==='powerup'){ tone(600,1400,0.22,'sine',0.2); }
+    else if(type==='shieldblock'){ tone(900,1200,0.1,'square',0.18); }
+    else if(type==='combo'){ tone(700,null,0.09,'triangle',0.22); tone(900,null,0.09,'triangle',0.22,0.09); tone(1200,null,0.14,'triangle',0.24,0.18); }
+    else if(type==='tick'){ tone(900,null,0.05,'square',0.09); }
+    else if(type==='newmission'){ tone(500,1000,0.18,'triangle',0.2); tone(1000,1500,0.18,'triangle',0.2,0.15); }
+    else if(type==='gostart'){ tone(500,900,0.2,'triangle',0.22); }
+    else if(type==='win'){ tone(523.25,null,0.16,'sine',0.28); tone(659.25,null,0.16,'sine',0.28,0.12); tone(783.99,null,0.3,'sine',0.28,0.24); }
+    else if(type==='gameover'){ tone(500,null,0.16,'sawtooth',0.22); tone(380,null,0.16,'sawtooth',0.22,0.16); tone(220,null,0.34,'sawtooth',0.22,0.32); }
+    else if(type==='tap'){ tone(320,null,0.08,'sine',0.12); }
+  }catch(e){}
+}
+
+/* ============ 出題條件產生器 ============ */
+const SHOOTER_MULTIPLE_BASES=[3,4,5,6,7,8,9];
+const SHOOTER_FACTOR_TARGETS=[24,28,30,32,36,40,42,45,48];
+function pickCondition(excludeType){
+  const types=['multiple','factor','prime','composite'].filter(t=>t!==excludeType);
+  const type=randChoice(types);
+  if(type==='multiple'){
+    const base=randChoice(SHOOTER_MULTIPLE_BASES);
+    const correctPool=[]; for(let i=base;i<=50;i+=base) correctPool.push(i);
+    const wrongPool=[]; for(let i=1;i<=50;i++){ if(i%base!==0) wrongPool.push(i); }
+    return { type, label:`只發射蜂蜜彈打中「${base} 的倍數」的蜜蜂！`, correctPool, wrongPool };
+  } else if(type==='factor'){
+    const n=randChoice(SHOOTER_FACTOR_TARGETS);
+    const correctPool=factorsOf(n);
+    const wrongPool=[]; for(let i=1;i<=50;i++){ if(!correctPool.includes(i)) wrongPool.push(i); }
+    return { type, label:`只發射蜂蜜彈打中「${n} 的因數」的蜜蜂！`, correctPool, wrongPool };
+  } else if(type==='prime'){
+    const correctPool=[]; for(let i=2;i<=50;i++) if(isPrime(i)) correctPool.push(i);
+    const wrongPool=[]; for(let i=4;i<=50;i++) if(!isPrime(i)) wrongPool.push(i);
+    return { type, label:'只發射蜂蜜彈打中「質數」的蜜蜂！', correctPool, wrongPool };
+  } else {
+    const correctPool=[]; for(let i=4;i<=50;i++) if(!isPrime(i)) correctPool.push(i);
+    const wrongPool=[]; for(let i=2;i<=50;i++) if(isPrime(i)) wrongPool.push(i);
+    return { type, label:'只發射蜂蜜彈打中「合數」的蜜蜂！', correctPool, wrongPool };
+  }
+}
+
+/* ============ 遊戲主體 ============ */
+const Game = {
+  active:false, cfg:null, score:0, hits:0, mistakes:0, lives:3, maxLives:5, shields:0,
+  combo:0, bestCombo:0, multiplierUntil:0, timeLeft:45, totalTime:45, missionSwitched:false,
+  spawnTimeoutId:null, countdownTimer:null, sky:null, bestScore:0,
+
+  renderStart(){
+    this.active = false;
+    document.getElementById('gameRoot').innerHTML = `
+      <div class="card">
+        <div class="start-emoji">🐝🔫</div>
+        <div class="start-title">準備好了嗎？</div>
+        <div class="start-desc">
+          數字蜜蜂會從天空飛下來，點一下符合任務條件的蜜蜂發射蜂蜜彈！<br>
+          任務中途會突然切換，小心別打錯，也別打到炸彈喔！
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="li-emoji">🐝</span><span class="li-label">符合條件<br>射擊得分</span></div>
+          <div class="legend-item"><span class="li-emoji">💣</span><span class="li-label">炸彈<br>千萬別射！</span></div>
+          <div class="legend-item"><span class="li-emoji">🍯</span><span class="li-label">蜂蜜罐<br>+1 生命</span></div>
+          <div class="legend-item"><span class="li-emoji">⭐</span><span class="li-label">金星星<br>雙倍分數</span></div>
+          <div class="legend-item"><span class="li-emoji">⏰</span><span class="li-label">時鐘<br>+8 秒</span></div>
+          <div class="legend-item"><span class="li-emoji">🛡️</span><span class="li-label">護盾<br>擋一次失誤</span></div>
+        </div>
+        <button class="btn-primary" onclick="Game.start()">🚀 開始射擊！</button>
+      </div>
+    `;
+    document.getElementById('bestScore').textContent = this.bestScore;
+  },
+
+  start(){
+    playSound('gostart');
+    this.cfg = pickCondition(null);
+    this.score=0; this.hits=0; this.mistakes=0; this.lives=3; this.shields=0;
+    this.combo=0; this.bestCombo=0; this.multiplierUntil=0;
+    this.timeLeft=45; this.totalTime=45; this.missionSwitched=false;
+    this.active = true;
+    document.getElementById('gameRoot').innerHTML = `
+      <div class="hud-row">
+        <div class="hearts" id="heartsRow"></div>
+        <div class="hud-pill"><span class="hud-num" id="shScore">0</span><span class="hud-label">分數</span></div>
+        <div class="hud-pill" id="timerPill"><span class="hud-num" id="shTimer">45</span><span class="hud-label">秒</span></div>
+      </div>
+      <div class="condition-banner" id="conditionBanner">🎯 ${this.cfg.label}</div>
+      <div class="bee-sky" id="beeSky">
+        <div class="flash-overlay" id="flashOverlay" style="display:none;"></div>
+        <div class="cloud" style="width:70px;height:26px;top:14px;left:8%;"></div>
+        <div class="cloud" style="width:50px;height:20px;top:40px;right:10%;"></div>
+        <div class="cannon">🛸</div>
+      </div>
+    `;
+    this.sky = document.getElementById('beeSky');
+    this.renderHearts();
+    this.scheduleNextSpawn();
+    this.countdownTimer = setInterval(()=>this.tickTime(),1000);
+  },
+
+  renderHearts(){
+    const el = document.getElementById('heartsRow');
+    if(!el) return;
+    let html='';
+    for(let i=0;i<this.maxLives;i++){ html += `<span class="heart ${i<this.lives?'':'empty'}">❤️</span>`; }
+    if(this.shields>0){ html += `<span class="shield-badge">🛡️×${this.shields}</span>`; }
+    el.innerHTML = html;
+  },
+
+  tickTime(){
+    this.timeLeft--;
+    const timerEl = document.getElementById('shTimer');
+    const pillEl = document.getElementById('timerPill');
+    if(timerEl) timerEl.textContent = Math.max(this.timeLeft,0);
+    if(this.timeLeft<=5 && this.timeLeft>0){ playSound('tick'); if(pillEl) pillEl.classList.add('timer-warn'); }
+    if(!this.missionSwitched && this.timeLeft===Math.floor(this.totalTime/2)){
+      this.missionSwitched = true;
+      this.cfg = pickCondition(this.cfg.type);
+      playSound('newmission');
+      const banner = document.getElementById('conditionBanner');
+      if(banner){ banner.textContent = `🔔 新任務！${this.cfg.label}`; banner.classList.remove('flash'); void banner.offsetWidth; banner.classList.add('flash'); }
+    }
+    if(this.timeLeft<=0){ this.endGame('time'); }
+  },
+
+  scheduleNextSpawn(){
+    if(!this.active) return;
+    const elapsedRatio = 1 - (this.timeLeft/this.totalTime);
+    const interval = 950 - elapsedRatio*350;
+    this.spawnTimeoutId = setTimeout(()=>{ this.spawnEntity(); this.scheduleNextSpawn(); }, interval);
+  },
+
+  rollKind(){
+    const r = Math.random()*100;
+    if(r<38) return 'bee-correct';
+    if(r<70) return 'bee-wrong';
+    if(r<83) return 'bomb';
+    if(r<90) return 'honey';
+    if(r<95) return 'star';
+    if(r<98) return 'clock';
+    return 'shield';
+  },
+
+  spawnEntity(){
+    if(!this.active || !this.sky) return;
+    const kind = this.rollKind();
+    const el = document.createElement('div');
+    let display, dataKind;
+    if(kind==='bee-correct' || kind==='bee-wrong'){
+      const num = kind==='bee-correct' ? randChoice(this.cfg.correctPool) : randChoice(this.cfg.wrongPool);
+      el.className = 'entity bee';
+      el.textContent = num;
+      dataKind = this.cfg.correctPool.includes(num) ? 'correct' : 'wrong';
+    } else {
+      el.className = 'entity item ' + (kind==='bomb'?'bomb':'');
+      const iconMap = {bomb:'💣', honey:'🍯', star:'⭐', clock:'⏰', shield:'🛡️'};
+      el.textContent = iconMap[kind];
+      dataKind = kind;
+    }
+    el.dataset.kind = dataKind;
+    const leftPct = randInt(6,80);
+    el.style.left = leftPct+'%';
+    el.style.top = '-46px';
+    this.sky.appendChild(el);
+    const duration = (Math.random()*2.0+3.4);
+    requestAnimationFrame(()=>{
+      el.style.transition = `top ${duration}s linear`;
+      el.style.top = 'calc(100% - 4px)';
+    });
+    const cleanup = ()=>{ if(el.parentNode) el.remove(); };
+    el.addEventListener('transitionend', cleanup);
+    el.addEventListener('click', ()=> this.onTap(el));
+  },
+
+  onTap(el){
+    if(!this.active || el.dataset.shot==='1') return;
+    el.dataset.shot='1';
+    playSound('laser');
+    this.shootBeam(el);
+    const kind = el.dataset.kind;
+
+    if(kind==='correct'){
+      this.combo++; this.bestCombo = Math.max(this.bestCombo, this.combo);
+      let gain = 10 + Math.min(this.combo,10)*2;
+      if(Date.now() < this.multiplierUntil) gain *= 2;
+      this.score += gain; this.hits++;
+      playSound('pop');
+      el.classList.add('pop');
+      this.floatText(el, '+'+gain, '#3DDC97');
+      if(this.combo>0 && this.combo%5===0){
+        playSound('combo');
+        this.showCombo(this.combo);
+      }
+    } else if(kind==='wrong'){
+      this.combo=0;
+      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(el,'護盾擋下!','#8BFFF7'); }
+      else { this.lives--; playSound('lifelost'); this.hitFlash(); this.floatText(el,'-1 ❤️','#FF6B6B'); this.mistakes++; }
+      el.classList.add('badpop');
+      this.renderHearts();
+      if(this.lives<=0){ setTimeout(()=>this.endGame('lives'),350); }
+    } else if(kind==='bomb'){
+      this.combo=0;
+      document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
+      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(el,'護盾擋下!','#8BFFF7'); }
+      else { this.lives--; playSound('explosion'); this.hitFlash(); this.floatText(el,'💥 -1 ❤️','#FF6B6B'); this.mistakes++; }
+      el.classList.add('badpop');
+      this.renderHearts();
+      if(this.lives<=0){ setTimeout(()=>this.endGame('lives'),350); }
+    } else if(kind==='honey'){
+      this.lives = Math.min(this.lives+1, this.maxLives);
+      playSound('lifeup'); el.classList.add('pop');
+      this.floatText(el, '+1 ❤️', '#FF9FC0');
+      this.renderHearts();
+    } else if(kind==='star'){
+      this.multiplierUntil = Date.now() + 6000;
+      playSound('powerup'); el.classList.add('pop');
+      this.floatText(el, '2倍分數 6秒!', '#FFE066');
+      if(this.sky) this.sky.classList.add('multiplier-on');
+      setTimeout(()=>{ if(this.sky) this.sky.classList.remove('multiplier-on'); }, 6000);
+    } else if(kind==='clock'){
+      this.timeLeft = Math.min(this.timeLeft+8, 90);
+      playSound('powerup'); el.classList.add('pop');
+      this.floatText(el, '+8 秒', '#8B7CF6');
+    } else if(kind==='shield'){
+      this.shields = Math.min(this.shields+1, 2);
+      playSound('powerup'); el.classList.add('pop');
+      this.floatText(el, '護盾 +1', '#8BFFF7');
+      this.renderHearts();
+    }
+
+    document.getElementById('shScore').textContent = this.score;
+    setTimeout(()=>{ if(el.parentNode) el.remove(); }, 320);
+  },
+
+  showCombo(n){
+    const banner = document.createElement('div');
+    banner.className='combo-banner';
+    banner.textContent = `🔥 連擊 x${n}！`;
+    document.getElementById('gameRoot').style.position='relative';
+    document.getElementById('gameRoot').appendChild(banner);
+    setTimeout(()=>banner.remove(), 750);
+  },
+
+  hitFlash(){
+    const f = document.getElementById('flashOverlay');
+    if(!f) return;
+    f.style.display='block';
+    f.style.animation='none'; void f.offsetWidth; f.style.animation='flash-hit .4s ease';
+    setTimeout(()=>{ f.style.display='none'; }, 400);
+  },
+
+  shootBeam(entityEl){
+    const skyRect = this.sky.getBoundingClientRect();
+    const eRect = entityEl.getBoundingClientRect();
+    const toX = eRect.left + eRect.width/2 - skyRect.left;
+    const toY = eRect.top + eRect.height/2 - skyRect.top;
+    const fromX = skyRect.width/2;
+    const fromY = skyRect.height - 22;
+    const dx=toX-fromX, dy=toY-fromY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const angle=Math.atan2(dy,dx)*180/Math.PI;
+    const beam=document.createElement('div');
+    beam.className='laser-beam';
+    beam.style.width=dist+'px'; beam.style.left=fromX+'px'; beam.style.top=fromY+'px';
+    beam.style.transform=`rotate(${angle}deg)`;
+    this.sky.appendChild(beam);
+    setTimeout(()=>beam.remove(),130);
+  },
+
+  floatText(entityEl, text, color){
+    const f=document.createElement('div');
+    f.className='float-txt'; f.textContent=text; f.style.color=color;
+    f.style.left=entityEl.style.left; f.style.top=entityEl.style.top;
+    this.sky.appendChild(f);
+    setTimeout(()=>f.remove(),760);
+  },
+
+  endGame(reason){
+    this.active=false;
+    clearTimeout(this.spawnTimeoutId);
+    clearInterval(this.countdownTimer);
+    if(this.sky){ this.sky.querySelectorAll('.entity').forEach(e=>e.remove()); }
+    playSound(reason==='lives' ? 'gameover' : 'win');
+
+    let stars=1;
+    if(this.mistakes<=2 && this.hits>=15) stars=3;
+    else if(this.hits>=8 && this.mistakes<=6) stars=2;
+    if(this.score > this.bestScore) this.bestScore = this.score;
+
+    launchConfetti(stars===3);
+    const title = reason==='lives' ? '💔 生命值用完了！' : '⏰ 時間到！';
+    document.getElementById('gameRoot').innerHTML = `
+      <div class="card">
+        <div class="summary-emoji">${reason==='lives'?'😵':'🏁'}</div>
+        <div class="summary-title">${title}</div>
+        <div class="summary-stars">
+          ${[1,2,3].map(i=>`<span class="${i<=stars?'earned':''}">★</span>`).join('')}
+        </div>
+        <div class="summary-stats">
+          <div class="summary-stat"><span class="s-num">${this.score}</span><span class="s-label">總分</span></div>
+          <div class="summary-stat"><span class="s-num">${this.hits}</span><span class="s-label">命中</span></div>
+          <div class="summary-stat"><span class="s-num">${this.bestCombo}</span><span class="s-label">最高連擊</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" style="box-shadow:0 6px 0 var(--teal-deep);" onclick="Game.start()">🔄 再玩一次</button>
+        </div>
+        <a class="btn-secondary" style="display:block; margin-top:10px;" href="galaxy-game.html">🚀 回主遊戲地圖</a>
+      </div>
+    `;
+    document.getElementById('bestScore').textContent = this.bestScore;
+  }
+};
+
+function launchConfetti(big){
+  const colors=['#2DD4BF','#FDBA3B','#FF6FA5','#8B7CF6','#FFE066'];
+  const count = big?60:34;
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    const size=Math.random()*7+5;
+    el.style.width=size+'px'; el.style.height=(size*0.5)+'px'; el.style.left=(Math.random()*100)+'vw';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const duration=Math.random()*1.5+2;
+    el.style.animationDuration=duration+'s'; el.style.opacity='0.95';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), duration*1000+200);
+  }
+}
+
+Game.renderStart();
+</script>
+</body>
+</html>
