@@ -103,7 +103,7 @@
 
   .entity{
     position:absolute; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-display); font-weight:800; font-size:1.1rem; cursor:pointer; user-select:none;
+    font-family:var(--font-display); font-weight:800; font-size:1.1rem; user-select:none; will-change:top,left;
   }
   .entity.bee{
     color:#4A2E00; background:radial-gradient(circle at 35% 30%, #FFE066, #FDBA3B 65%, #E8940A 100%);
@@ -118,8 +118,9 @@
   @keyframes bee-pop{to{transform:scale(1.8); opacity:0;}}
   @keyframes bee-badpop{0%{transform:scale(1);}40%{transform:scale(0.85) rotate(-10deg);}100%{transform:scale(0.4) rotate(20deg); opacity:0;}}
 
-  .laser-beam{position:absolute; height:4px; background:linear-gradient(90deg,#fff,#FDBA3B); transform-origin:0 50%; z-index:10; border-radius:4px; box-shadow:0 0 10px #FFE066, 0 0 4px #fff; pointer-events:none;}
-  .cannon{position:absolute; bottom:6px; left:50%; transform:translateX(-50%); font-size:2.2rem; z-index:5; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.35));}
+  .bullet{position:absolute; width:8px; height:22px; border-radius:6px; background:linear-gradient(180deg,#fff,#FDBA3B); box-shadow:0 0 8px #FFE066, 0 0 4px #fff; z-index:8; pointer-events:none; will-change:top,left;}
+  .cannon{position:absolute; bottom:8px; font-size:2.3rem; z-index:5; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.35)); transform:translateX(-50%); will-change:left; transition:filter .15s ease;}
+  .aim-hint{position:absolute; bottom:0; left:0; right:0; text-align:center; color:rgba(255,255,255,0.85); font-size:0.7rem; font-weight:700; padding-bottom:2px; z-index:4; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,0.4);}
   .float-txt{position:absolute; font-family:var(--font-display); font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,0.4); font-size:1.05rem; pointer-events:none; z-index:12; animation:float-up .75s ease forwards;}
   @keyframes float-up{to{transform:translateY(-42px); opacity:0;}}
 
@@ -149,7 +150,7 @@
 
 <div id="app">
   <div class="topnav">
-    <a class="icon-btn" href="galaxy-game.html" title="回主遊戲">←</a>
+    <a class="icon-btn" href="index.html" title="回主遊戲">←</a>
     <div class="page-title">🐝 蜜蜂大作戰</div>
     <div class="best-pill">🏆 <span id="bestScore">0</span></div>
   </div>
@@ -193,6 +194,7 @@ function playSound(type){
   try{
     ensureAudio();
     if(type==='laser'){ tone(1250,280,0.11,'sawtooth',0.14); }
+    else if(type==='pewsoft'){ tone(1100,600,0.05,'sawtooth',0.045); }
     else if(type==='pop'){ tone(700,1300,0.14,'triangle',0.22); }
     else if(type==='buzz'){ tone(200,150,0.18,'sawtooth',0.18); }
     else if(type==='explosion'){ tone(160,40,0.35,'sawtooth',0.3); tone(90,30,0.4,'square',0.2,0.05); }
@@ -241,17 +243,18 @@ function pickCondition(excludeType){
 const Game = {
   active:false, cfg:null, score:0, hits:0, mistakes:0, lives:3, maxLives:5, shields:0,
   combo:0, bestCombo:0, multiplierUntil:0, timeLeft:45, totalTime:45, missionSwitched:false,
-  spawnTimeoutId:null, countdownTimer:null, sky:null, bestScore:0,
+  spawnTimeoutId:null, countdownTimer:null, rafId:null, sky:null, bestScore:0,
+  entities:[], bullets:[], cannonX:0, fireCooldown:0, lastFrameTime:0, dragging:false,
 
   renderStart(){
     this.active = false;
     document.getElementById('gameRoot').innerHTML = `
       <div class="card">
-        <div class="start-emoji">🐝🔫</div>
+        <div class="start-emoji">🐝🛸</div>
         <div class="start-title">準備好了嗎？</div>
         <div class="start-desc">
-          數字蜜蜂會從天空飛下來，點一下符合任務條件的蜜蜂發射蜂蜜彈！<br>
-          任務中途會突然切換，小心別打錯，也別打到炸彈喔！
+          左右拖曳移動小飛船瞄準，飛船會自動發射蜂蜜彈！<br>
+          讓符合任務條件的蜜蜂飛進準心裡，任務中途會突然切換，小心別打到錯的蜜蜂或炸彈喔！
         </div>
         <div class="legend">
           <div class="legend-item"><span class="li-emoji">🐝</span><span class="li-label">符合條件<br>射擊得分</span></div>
@@ -273,6 +276,7 @@ const Game = {
     this.score=0; this.hits=0; this.mistakes=0; this.lives=3; this.shields=0;
     this.combo=0; this.bestCombo=0; this.multiplierUntil=0;
     this.timeLeft=45; this.totalTime=45; this.missionSwitched=false;
+    this.entities=[]; this.bullets=[]; this.fireCooldown=0;
     this.active = true;
     document.getElementById('gameRoot').innerHTML = `
       <div class="hud-row">
@@ -285,13 +289,40 @@ const Game = {
         <div class="flash-overlay" id="flashOverlay" style="display:none;"></div>
         <div class="cloud" style="width:70px;height:26px;top:14px;left:8%;"></div>
         <div class="cloud" style="width:50px;height:20px;top:40px;right:10%;"></div>
-        <div class="cannon">🛸</div>
+        <div class="aim-hint">← 拖曳瞄準 →</div>
+        <div class="cannon" id="cannonEl">🛸</div>
       </div>
     `;
     this.sky = document.getElementById('beeSky');
+    this.cannonEl = document.getElementById('cannonEl');
+    this.cannonX = this.sky.clientWidth / 2;
+    this.updateCannonVisual();
     this.renderHearts();
+    this.bindControls();
     this.scheduleNextSpawn();
     this.countdownTimer = setInterval(()=>this.tickTime(),1000);
+    this.lastFrameTime = performance.now();
+    this.rafId = requestAnimationFrame((t)=>this.loop(t));
+  },
+
+  bindControls(){
+    const onMove = (clientX)=>{
+      const rect = this.sky.getBoundingClientRect();
+      let x = clientX - rect.left;
+      x = Math.max(26, Math.min(rect.width-26, x));
+      this.cannonX = x;
+      this.updateCannonVisual();
+    };
+    this.sky.addEventListener('pointerdown', (e)=>{ this.dragging=true; onMove(e.clientX); });
+    window.addEventListener('pointermove', (e)=>{ if(this.dragging) onMove(e.clientX); });
+    window.addEventListener('pointerup', ()=>{ this.dragging=false; });
+    this.sky.addEventListener('touchstart', (e)=>{ this.dragging=true; onMove(e.touches[0].clientX); }, {passive:true});
+    this.sky.addEventListener('touchmove', (e)=>{ if(this.dragging) onMove(e.touches[0].clientX); }, {passive:true});
+    this.sky.addEventListener('touchend', ()=>{ this.dragging=false; }, {passive:true});
+  },
+
+  updateCannonVisual(){
+    if(this.cannonEl) this.cannonEl.style.left = this.cannonX + 'px';
   },
 
   renderHearts(){
@@ -341,7 +372,7 @@ const Game = {
     if(!this.active || !this.sky) return;
     const kind = this.rollKind();
     const el = document.createElement('div');
-    let display, dataKind;
+    let dataKind;
     if(kind==='bee-correct' || kind==='bee-wrong'){
       const num = kind==='bee-correct' ? randChoice(this.cfg.correctPool) : randChoice(this.cfg.wrongPool);
       el.className = 'entity bee';
@@ -353,27 +384,96 @@ const Game = {
       el.textContent = iconMap[kind];
       dataKind = kind;
     }
-    el.dataset.kind = dataKind;
-    const leftPct = randInt(6,80);
-    el.style.left = leftPct+'%';
-    el.style.top = '-46px';
+    const skyWidth = this.sky.clientWidth;
+    const skyHeight = this.sky.clientHeight;
+    const x = randInt(30, Math.max(31,skyWidth-30));
+    const elapsedRatio = 1 - (this.timeLeft/this.totalTime);
+    const vy = randInt(65,105) + elapsedRatio*28;
+    const startY = skyHeight + 46;
+    el.style.left = (x-26)+'px';
+    el.style.top = startY+'px';
     this.sky.appendChild(el);
-    const duration = (Math.random()*2.0+3.4);
-    requestAnimationFrame(()=>{
-      el.style.transition = `top ${duration}s linear`;
-      el.style.top = 'calc(100% - 4px)';
-    });
-    const cleanup = ()=>{ if(el.parentNode) el.remove(); };
-    el.addEventListener('transitionend', cleanup);
-    el.addEventListener('click', ()=> this.onTap(el));
+    const entity = { el, x, y:startY, vy, kind:dataKind, alive:true };
+    this.entities.push(entity);
   },
 
-  onTap(el){
-    if(!this.active || el.dataset.shot==='1') return;
-    el.dataset.shot='1';
+  loop(ts){
+    if(!this.active) return;
+    const dt = Math.min((ts - this.lastFrameTime)/1000, 0.05);
+    this.lastFrameTime = ts;
+    const skyH = this.sky.clientHeight;
+
+    // 子彈自動發射
+    this.fireCooldown -= dt;
+    if(this.fireCooldown<=0){
+      this.fireBullet();
+      this.fireCooldown = 0.24;
+    }
+
+    // 更新蜜蜂/道具位置（由下往上飛）
+    for(let i=this.entities.length-1; i>=0; i--){
+      const e = this.entities[i];
+      e.y -= e.vy*dt;
+      e.el.style.top = e.y+'px';
+      if(e.y < -60){
+        e.el.remove();
+        this.entities.splice(i,1);
+      }
+    }
+
+    // 更新子彈位置
+    for(let i=this.bullets.length-1; i>=0; i--){
+      const b = this.bullets[i];
+      b.y -= 480*dt;
+      b.el.style.top = b.y+'px';
+      if(b.y < -30){
+        b.el.remove();
+        this.bullets.splice(i,1);
+      }
+    }
+
+    this.checkCollisions();
+    this.rafId = requestAnimationFrame((t)=>this.loop(t));
+  },
+
+  fireBullet(){
+    if(!this.sky) return;
+    playSound('pewsoft');
+    const el = document.createElement('div');
+    el.className='bullet';
+    const y = this.sky.clientHeight - 40;
+    el.style.left = (this.cannonX-4)+'px';
+    el.style.top = y+'px';
+    this.sky.appendChild(el);
+    this.bullets.push({ el, x:this.cannonX, y });
+  },
+
+  checkCollisions(){
+    for(let bi=this.bullets.length-1; bi>=0; bi--){
+      const b = this.bullets[bi];
+      let hitIndex = -1;
+      for(let ei=0; ei<this.entities.length; ei++){
+        const e = this.entities[ei];
+        if(!e.alive) continue;
+        const dx = Math.abs(b.x - e.x);
+        const dyInRange = b.y <= e.y+26 && b.y >= e.y-26;
+        if(dx<28 && dyInRange){ hitIndex = ei; break; }
+      }
+      if(hitIndex>=0){
+        const entity = this.entities[hitIndex];
+        entity.alive = false;
+        this.entities.splice(hitIndex,1);
+        b.el.remove();
+        this.bullets.splice(bi,1);
+        this.resolveHit(entity);
+      }
+    }
+  },
+
+  resolveHit(entity){
     playSound('laser');
-    this.shootBeam(el);
-    const kind = el.dataset.kind;
+    const el = entity.el;
+    const kind = entity.kind;
 
     if(kind==='correct'){
       this.combo++; this.bestCombo = Math.max(this.bestCombo, this.combo);
@@ -382,45 +482,42 @@ const Game = {
       this.score += gain; this.hits++;
       playSound('pop');
       el.classList.add('pop');
-      this.floatText(el, '+'+gain, '#3DDC97');
-      if(this.combo>0 && this.combo%5===0){
-        playSound('combo');
-        this.showCombo(this.combo);
-      }
+      this.floatText(entity, '+'+gain, '#3DDC97');
+      if(this.combo>0 && this.combo%5===0){ playSound('combo'); this.showCombo(this.combo); }
     } else if(kind==='wrong'){
       this.combo=0;
-      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(el,'護盾擋下!','#8BFFF7'); }
-      else { this.lives--; playSound('lifelost'); this.hitFlash(); this.floatText(el,'-1 ❤️','#FF6B6B'); this.mistakes++; }
+      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(entity,'護盾擋下!','#8BFFF7'); }
+      else { this.lives--; playSound('lifelost'); this.hitFlash(); this.floatText(entity,'-1 ❤️','#FF6B6B'); this.mistakes++; }
       el.classList.add('badpop');
       this.renderHearts();
       if(this.lives<=0){ setTimeout(()=>this.endGame('lives'),350); }
     } else if(kind==='bomb'){
       this.combo=0;
       document.body.classList.remove('shake'); void document.body.offsetWidth; document.body.classList.add('shake');
-      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(el,'護盾擋下!','#8BFFF7'); }
-      else { this.lives--; playSound('explosion'); this.hitFlash(); this.floatText(el,'💥 -1 ❤️','#FF6B6B'); this.mistakes++; }
+      if(this.shields>0){ this.shields--; playSound('shieldblock'); this.floatText(entity,'護盾擋下!','#8BFFF7'); }
+      else { this.lives--; playSound('explosion'); this.hitFlash(); this.floatText(entity,'💥 -1 ❤️','#FF6B6B'); this.mistakes++; }
       el.classList.add('badpop');
       this.renderHearts();
       if(this.lives<=0){ setTimeout(()=>this.endGame('lives'),350); }
     } else if(kind==='honey'){
       this.lives = Math.min(this.lives+1, this.maxLives);
       playSound('lifeup'); el.classList.add('pop');
-      this.floatText(el, '+1 ❤️', '#FF9FC0');
+      this.floatText(entity, '+1 ❤️', '#FF9FC0');
       this.renderHearts();
     } else if(kind==='star'){
       this.multiplierUntil = Date.now() + 6000;
       playSound('powerup'); el.classList.add('pop');
-      this.floatText(el, '2倍分數 6秒!', '#FFE066');
+      this.floatText(entity, '2倍分數 6秒!', '#FFE066');
       if(this.sky) this.sky.classList.add('multiplier-on');
       setTimeout(()=>{ if(this.sky) this.sky.classList.remove('multiplier-on'); }, 6000);
     } else if(kind==='clock'){
       this.timeLeft = Math.min(this.timeLeft+8, 90);
       playSound('powerup'); el.classList.add('pop');
-      this.floatText(el, '+8 秒', '#8B7CF6');
+      this.floatText(entity, '+8 秒', '#8B7CF6');
     } else if(kind==='shield'){
       this.shields = Math.min(this.shields+1, 2);
       playSound('powerup'); el.classList.add('pop');
-      this.floatText(el, '護盾 +1', '#8BFFF7');
+      this.floatText(entity, '護盾 +1', '#8BFFF7');
       this.renderHearts();
     }
 
@@ -445,28 +542,10 @@ const Game = {
     setTimeout(()=>{ f.style.display='none'; }, 400);
   },
 
-  shootBeam(entityEl){
-    const skyRect = this.sky.getBoundingClientRect();
-    const eRect = entityEl.getBoundingClientRect();
-    const toX = eRect.left + eRect.width/2 - skyRect.left;
-    const toY = eRect.top + eRect.height/2 - skyRect.top;
-    const fromX = skyRect.width/2;
-    const fromY = skyRect.height - 22;
-    const dx=toX-fromX, dy=toY-fromY;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    const angle=Math.atan2(dy,dx)*180/Math.PI;
-    const beam=document.createElement('div');
-    beam.className='laser-beam';
-    beam.style.width=dist+'px'; beam.style.left=fromX+'px'; beam.style.top=fromY+'px';
-    beam.style.transform=`rotate(${angle}deg)`;
-    this.sky.appendChild(beam);
-    setTimeout(()=>beam.remove(),130);
-  },
-
-  floatText(entityEl, text, color){
+  floatText(entity, text, color){
     const f=document.createElement('div');
     f.className='float-txt'; f.textContent=text; f.style.color=color;
-    f.style.left=entityEl.style.left; f.style.top=entityEl.style.top;
+    f.style.left=(entity.x-20)+'px'; f.style.top=entity.y+'px';
     this.sky.appendChild(f);
     setTimeout(()=>f.remove(),760);
   },
@@ -475,7 +554,9 @@ const Game = {
     this.active=false;
     clearTimeout(this.spawnTimeoutId);
     clearInterval(this.countdownTimer);
-    if(this.sky){ this.sky.querySelectorAll('.entity').forEach(e=>e.remove()); }
+    cancelAnimationFrame(this.rafId);
+    if(this.sky){ this.sky.querySelectorAll('.entity,.bullet').forEach(e=>e.remove()); }
+    this.entities=[]; this.bullets=[];
     playSound(reason==='lives' ? 'gameover' : 'win');
 
     let stars=1;
@@ -500,7 +581,7 @@ const Game = {
         <div class="btn-row">
           <button class="btn-primary" style="box-shadow:0 6px 0 var(--teal-deep);" onclick="Game.start()">🔄 再玩一次</button>
         </div>
-        <a class="btn-secondary" style="display:block; margin-top:10px;" href="galaxy-game.html">🚀 回主遊戲地圖</a>
+        <a class="btn-secondary" style="display:block; margin-top:10px;" href="index.html">🚀 回主遊戲地圖</a>
       </div>
     `;
     document.getElementById('bestScore').textContent = this.bestScore;
