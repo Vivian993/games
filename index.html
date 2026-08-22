@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>數字銀河大冒險｜因數與倍數</title>
+<link rel="apple-touch-icon" href="custom-icon.png">
+<link rel="icon" type="image/png" href="custom-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#120F33; --bg-deep2:#1D1854; --bg-deep3:#2A1F6B;
+    --panel:#FFFFFF; --panel-soft:#F4F1FF;
+    --ink:#221B4D; --ink-soft:#726B9C; --ink-faint:#A29CC7;
+    --teal:#2DD4BF; --teal-deep:#159C8C;
+    --amber:#FDBA3B; --amber-deep:#E8940A;
+    --pink:#FF6FA5; --pink-deep:#E84A85;
+    --violet:#8B7CF6; --violet-deep:#6952E0;
+    --star:#FFE066; --danger:#FF6B6B; --success:#3DDC97;
+    --radius-lg:28px; --radius-md:20px; --radius-sm:14px;
+    --shadow-panel:0 20px 45px -12px rgba(18,15,51,0.35), 0 4px 12px rgba(18,15,51,0.12);
+    --font-display:'Baloo 2','Noto Sans TC',sans-serif;
+    --font-body:'Noto Sans TC',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-body);
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(139,124,246,0.35), transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(255,111,165,0.18), transparent 50%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep2) 55%, var(--bg-deep3) 100%);
+    color:var(--ink); min-height:100vh; overflow-x:hidden; position:relative;
+  }
+  .stars-bg{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  .star-dot{position:absolute; background:#fff; border-radius:50%; opacity:0.7; animation:twinkle 3s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(0.8);} 50%{opacity:.9; transform:scale(1.15);}}
+  .blob{position:fixed; border-radius:50%; filter:blur(60px); opacity:0.35; z-index:0; pointer-events:none;}
+  .blob1{width:280px; height:280px; background:var(--violet); top:-80px; left:-60px;}
+  .blob2{width:220px; height:220px; background:var(--pink); bottom:10%; right:-70px;}
+  .blob3{width:200px; height:200px; background:var(--teal); bottom:-60px; left:10%;}
+
+  #app{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;}
+  .screen{display:none; flex-direction:column; min-height:100vh; padding:22px 18px 40px; max-width:520px; margin:0 auto; width:100%;}
+  .screen.active{display:flex; animation:fadeIn .45s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+  #screen-splash{align-items:center; justify-content:center; text-align:center; gap:22px;}
+  .app-icon{
+    width:130px; height:130px; border-radius:34px;
+    background:linear-gradient(155deg, var(--violet) 0%, var(--pink) 55%, var(--amber) 100%);
+    display:flex; align-items:center; justify-content:center; font-size:64px;
+    box-shadow:0 25px 50px -15px rgba(139,124,246,0.6), inset 0 2px 0 rgba(255,255,255,0.4);
+    animation:floaty 3.2s ease-in-out infinite; position:relative;
+  }
+  .app-icon::after{content:'';position:absolute; inset:0; border-radius:34px; background:linear-gradient(155deg, rgba(255,255,255,0.35), transparent 50%);}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg);} 50%{transform:translateY(-10px) rotate(2deg);}}
+  .brand-title{font-family:var(--font-display); font-weight:800; font-size:2rem; color:#fff; letter-spacing:1px; text-shadow:0 4px 18px rgba(139,124,246,0.6);}
+  .brand-sub{color:#C9C3F0; font-size:1.02rem; font-weight:500; max-width:320px; line-height:1.6;}
+  .brand-badges{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:4px;}
+  .brand-badge{background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18); color:#E8E4FF; font-size:0.78rem; padding:6px 12px; border-radius:100px; backdrop-filter:blur(4px);}
+  .btn-primary{
+    font-family:var(--font-display); font-weight:700; font-size:1.15rem; color:#fff;
+    background:linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%);
+    border:none; border-radius:100px; padding:16px 46px;
+    box-shadow:0 6px 0 var(--teal-deep), 0 14px 25px -8px rgba(45,212,191,0.55);
+    cursor:pointer; transition:transform .12s ease, box-shadow .12s ease; letter-spacing:1px;
+  }
+  .btn-primary:active{transform:translateY(4px); box-shadow:0 2px 0 var(--teal-deep), 0 6px 14px -6px rgba(45,212,191,0.5);}
+  .splash-hint{color:#9089C4; font-size:0.82rem; margin-top:2px;}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:8px;}
+  .stat-pill{display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; font-family:var(--font-display); font-weight:700; padding:7px 14px; border-radius:100px; font-size:0.95rem; backdrop-filter:blur(4px);}
+  .icon-btn{width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;}
+
+  .map-header{text-align:center; margin-bottom:6px;}
+  .map-title{font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.4rem; text-shadow:0 3px 12px rgba(0,0,0,0.3);}
+  .map-sub{color:#B3ABE8; font-size:0.85rem; margin-top:3px;}
+
+  .arcade-card{
+    display:flex; align-items:center; gap:14px; background:linear-gradient(155deg,#FFD86B,#FF6FA5);
+    border-radius:22px; padding:14px 16px; margin:16px 0 6px; cursor:pointer; box-shadow:0 10px 24px -8px rgba(255,111,165,0.55);
+    border:2px solid rgba(255,255,255,0.4); position:relative; overflow:hidden;
+  }
+  .arcade-card:active{transform:scale(0.98);}
+  .arcade-emoji{font-size:2.6rem; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.2));}
+  .arcade-info{flex:1; text-align:left;}
+  .arcade-title{font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.05rem;}
+  .arcade-sub{color:rgba(255,255,255,0.9); font-size:0.75rem; margin-top:2px;}
+  .arcade-stars{display:flex; gap:2px; margin-top:4px;}
+  .arcade-stars span{font-size:0.7rem; color:rgba(255,255,255,0.4);}
+  .arcade-stars span.filled{color:#fff; text-shadow:0 0 6px rgba(255,255,255,0.8);}
+  .arcade-go{font-size:1.3rem; color:#fff;}
+
+  .level-path{position:relative; padding:24px 0 10px; flex:1;}
+  .level-path::before{
+    content:''; position:absolute; top:0; bottom:40px; left:50%; width:5px; transform:translateX(-50%);
+    background-image:repeating-linear-gradient(180deg, rgba(255,255,255,0.35) 0 10px, transparent 10px 20px);
+    border-radius:10px; z-index:0;
+  }
+  .node-row{display:flex; margin:8px 0 30px; position:relative; z-index:1;}
+  .node-row.left{justify-content:flex-start; padding-left:8%;}
+  .node-row.right{justify-content:flex-end; padding-right:8%;}
+  .node-wrap{display:flex; flex-direction:column; align-items:center; gap:8px; position:relative;}
+  .node-btn{width:78px; height:78px; border-radius:50%; border:none; position:relative; font-size:2rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s ease;}
+  .node-btn.unlocked{background:radial-gradient(circle at 32% 28%, #fff, var(--panel-soft) 40%, var(--node-color,var(--violet)) 100%); box-shadow:0 8px 0 var(--node-color-deep,var(--violet-deep)), 0 16px 26px -8px rgba(0,0,0,0.4);}
+  .node-btn.unlocked:active{transform:translateY(5px); box-shadow:0 3px 0 var(--node-color-deep,var(--violet-deep));}
+  .node-btn.locked{background:rgba(255,255,255,0.08); border:2px dashed rgba(255,255,255,0.25); color:rgba(255,255,255,0.35); cursor:not-allowed; font-size:1.5rem;}
+  .node-btn.boss.unlocked{width:92px; height:92px; font-size:2.4rem;}
+  .mascot-here{position:absolute; left:50%; top:-38px; transform:translateX(-50%); font-size:1.6rem; animation:bob 1.6s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-6px);}}
+  .node-label{font-family:var(--font-display); font-weight:700; color:#fff; font-size:0.88rem; text-align:center; text-shadow:0 2px 6px rgba(0,0,0,0.35);}
+  .node-stars{display:flex; gap:2px;}
+  .node-stars span{font-size:0.72rem; color:rgba(255,255,255,0.25);}
+  .node-stars span.filled{color:var(--star); text-shadow:0 0 8px rgba(255,224,102,0.7);}
+
+  .level-header{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .level-title-wrap{flex:1;}
+  .level-title{font-family:var(--font-display); font-weight:800; color:#fff; font-size:1.2rem;}
+  .level-progress{display:flex; gap:5px; margin-top:6px;}
+  .progress-dot{flex:1; height:6px; border-radius:10px; background:rgba(255,255,255,0.15);}
+  .progress-dot.done{background:var(--teal);}
+  .progress-dot.current{background:var(--amber);}
+
+  .card{background:var(--panel); border-radius:var(--radius-lg); padding:22px; box-shadow:var(--shadow-panel); position:relative; overflow:hidden;}
+  .concept-tag{display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:700; background:var(--panel-soft); color:var(--violet-deep); padding:5px 12px; border-radius:100px; margin-bottom:12px;}
+  .prompt-text{font-size:1.08rem; font-weight:700; color:var(--ink); line-height:1.55; margin-bottom:4px;}
+  .prompt-pair{display:flex; gap:10px; justify-content:center; margin:14px 0;}
+  .pair-num{font-family:var(--font-display); font-weight:800; font-size:1.7rem; color:#fff; background:linear-gradient(155deg, var(--violet), var(--pink)); border-radius:16px; padding:10px 22px; box-shadow:0 6px 0 var(--violet-deep);}
+
+  .option-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:16px;}
+  .opt-card{background:#fff; border:2px solid #E4E0F7; border-radius:14px; font-family:var(--font-display); font-weight:700; font-size:1.25rem; padding:16px 0; text-align:center; cursor:pointer; color:var(--ink); transition:all .15s ease; user-select:none;}
+  .opt-card:active{transform:scale(0.95);}
+  .opt-card.selected{background:linear-gradient(155deg, var(--teal), var(--teal-deep)); color:#fff; border-color:var(--teal-deep); box-shadow:0 4px 14px -4px rgba(45,212,191,0.6);}
+  .opt-card.wrong-flash{animation:shake-wrong .4s ease; background:#FFE3E3; border-color:var(--danger); color:var(--danger);}
+  @keyframes shake-wrong{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+  .opt-card.disabled{opacity:0.45; pointer-events:none;}
+
+  .classify-list{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .classify-row{display:flex; align-items:center; gap:10px; background:var(--panel-soft); border-radius:14px; padding:10px 14px;}
+  .classify-num{font-family:var(--font-display); font-weight:800; font-size:1.3rem; color:var(--ink); width:44px; text-align:center;}
+  .classify-btns{display:flex; gap:8px; flex:1;}
+  .classify-btn{flex:1; padding:9px 0; border-radius:10px; border:2px solid #E4E0F7; background:#fff; font-weight:700; font-size:0.85rem; color:var(--ink-soft); cursor:pointer;}
+  .classify-btn.active-prime{background:linear-gradient(155deg, var(--violet), var(--violet-deep)); color:#fff; border-color:var(--violet-deep);}
+  .classify-btn.active-composite{background:linear-gradient(155deg, var(--amber), var(--amber-deep)); color:#fff; border-color:var(--amber-deep);}
+
+  .mascot-tip{display:flex; gap:10px; align-items:flex-start; background:linear-gradient(155deg,#FFF8E6,#FFF1D6); border:1.5px solid #FFE1A0; border-radius:16px; padding:12px 14px; margin-top:16px; font-size:0.85rem; color:#7A5B12; line-height:1.55;}
+  .mascot-face{font-size:1.6rem; flex-shrink:0;}
+
+  .submit-bar{margin-top:20px; display:flex; gap:10px;}
+  .btn-submit{flex:1; font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:#fff; background:linear-gradient(180deg, var(--pink), var(--pink-deep)); border:none; border-radius:100px; padding:15px 0; box-shadow:0 6px 0 var(--pink-deep); cursor:pointer;}
+  .btn-submit:active{transform:translateY(4px); box-shadow:0 2px 0 var(--pink-deep);}
+  .feedback-msg{margin-top:14px; text-align:center; font-weight:700; font-size:0.95rem; min-height:24px;}
+  .feedback-msg.ok{color:var(--success);}
+  .feedback-msg.bad{color:var(--danger);}
+
+  .boss-wrap{text-align:center; margin-bottom:14px;}
+  .boss-emoji{font-size:4rem; display:inline-block; animation:floaty 2.4s ease-in-out infinite;}
+  .boss-hp-bar{height:16px; background:#3a2f7a; border-radius:100px; margin:10px auto 0; max-width:280px; overflow:hidden; border:2px solid rgba(255,255,255,0.2);}
+  .boss-hp-fill{height:100%; background:linear-gradient(90deg, var(--danger), #FF9F6B); transition:width .4s ease; border-radius:100px;}
+  .boss-q-label{font-size:0.78rem; color:var(--ink-faint); font-weight:700; text-transform:uppercase; letter-spacing:1px;}
+  .choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .choice-card{background:#fff; border:2px solid #E4E0F7; border-radius:14px; padding:16px 8px; text-align:center; cursor:pointer; font-family:var(--font-display); font-weight:700; font-size:1.15rem; color:var(--ink); transition:all .15s ease;}
+  .choice-card:active{transform:scale(0.96);}
+
+  #screen-levelcomplete{align-items:center; justify-content:center; text-align:center; gap:16px;}
+  .complete-emoji{font-size:4.5rem; animation:pop-correct .6s ease;}
+  @keyframes pop-correct{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+  .complete-title{font-family:var(--font-display); font-weight:800; font-size:1.6rem; color:#fff;}
+  .complete-stars{display:flex; gap:10px; margin:6px 0;}
+  .complete-stars span{font-size:2.4rem; color:rgba(255,255,255,0.2); filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));}
+  .complete-stars span.earned{color:var(--star); animation:star-pop .5s ease backwards;}
+  .complete-stars span.earned:nth-child(1){animation-delay:.1s;}
+  .complete-stars span.earned:nth-child(2){animation-delay:.25s;}
+  .complete-stars span.earned:nth-child(3){animation-delay:.4s;}
+  @keyframes star-pop{0%{transform:scale(0) rotate(-30deg); opacity:0;}70%{transform:scale(1.25) rotate(8deg);}100%{transform:scale(1) rotate(0); opacity:1;}}
+  .complete-sub{color:#C9C3F0; font-size:0.9rem; max-width:280px;}
+
+  #screen-finale{align-items:center; justify-content:center; text-align:center; gap:14px;}
+  .badge-shelf{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;}
+  .badge-item{background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.18); border-radius:16px; padding:14px 6px; font-size:1.8rem;}
+  .badge-item .b-label{display:block; font-size:0.62rem; color:#C9C3F0; margin-top:4px; font-weight:700;}
+
+  .confetti-piece{position:fixed; top:-20px; z-index:50; border-radius:2px; pointer-events:none; animation:confetti-fall linear forwards;}
+  @keyframes confetti-fall{to{transform:translateY(110vh) rotate(600deg); opacity:0.3;}}
+
+  .back-link{color:#C9C3F0; font-size:0.85rem; text-decoration:underline; cursor:pointer; text-align:center; margin-top:16px;}
+
+  /* ---------- Bee Shooter ---------- */
+  .shooter-hud{display:flex; gap:8px; margin-bottom:12px;}
+  .hud-pill{flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.16); border-radius:14px; padding:8px 10px; text-align:center; color:#fff;}
+  .hud-pill .hud-num{font-family:var(--font-display); font-weight:800; font-size:1.3rem; display:block; line-height:1.1;}
+  .hud-pill .hud-label{font-size:0.65rem; color:#C9C3F0;}
+  .hud-pill.timer-warn .hud-num{color:var(--danger); animation:pulse-warn .5s ease infinite;}
+  @keyframes pulse-warn{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+
+  .condition-banner{
+    background:linear-gradient(155deg,#FFD86B,#FF9F6B); color:#5A3200; font-weight:700; font-size:0.92rem;
+    text-align:center; padding:10px 14px; border-radius:14px; margin-bottom:12px; box-shadow:0 4px 10px -4px rgba(255,159,107,0.6);
+  }
+
+  .bee-sky{
+    position:relative; height:min(56vh, 460px); border-radius:24px; overflow:hidden;
+    background:linear-gradient(180deg,#5B8DEF 0%, #7FB2F0 40%, #BFE3FF 100%);
+    border:3px solid rgba(255,255,255,0.5); box-shadow:var(--shadow-panel);
+  }
+  .cloud{position:absolute; background:rgba(255,255,255,0.55); border-radius:50px; filter:blur(1px);}
+  .bee{
+    position:absolute; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; font-size:1.15rem; color:#4A2E00; cursor:pointer; user-select:none;
+    background:radial-gradient(circle at 35% 30%, #FFE066, #FDBA3B 65%, #E8940A 100%);
+    box-shadow:0 6px 12px -3px rgba(0,0,0,0.35), inset 0 -3px 0 rgba(0,0,0,0.15);
+    border:3px solid #3D2600;
+  }
+  .bee::before{content:'';position:absolute; top:-8px; left:8px; width:14px; height:10px; background:rgba(255,255,255,0.75); border-radius:50% 50% 50% 0; transform:rotate(-15deg);}
+  .bee::after{content:'';position:absolute; top:-8px; right:8px; width:14px; height:10px; background:rgba(255,255,255,0.75); border-radius:50% 50% 0 50%; transform:rotate(15deg);}
+  .bee.pop{animation:bee-pop .3s ease forwards;}
+  .bee.badpop{animation:bee-badpop .35s ease forwards;}
+  @keyframes bee-pop{to{transform:scale(1.8); opacity:0;}}
+  @keyframes bee-badpop{0%{transform:scale(1);}40%{transform:scale(0.85) rotate(-10deg);}100%{transform:scale(0.4) rotate(20deg); opacity:0;}}
+
+  .laser-beam{position:absolute; height:4px; background:linear-gradient(90deg,#fff,#FDBA3B); transform-origin:0 50%; z-index:10; border-radius:4px; box-shadow:0 0 10px #FFE066, 0 0 4px #fff; pointer-events:none;}
+  .cannon{position:absolute; bottom:6px; left:50%; transform:translateX(-50%); font-size:2.2rem; z-index:5; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.35));}
+  .float-score{position:absolute; font-family:var(--font-display); font-weight:800; color:#fff; text-shadow:0 2px 4px rgba(0,0,0,0.4); font-size:1.1rem; pointer-events:none; z-index:12; animation:float-up .7s ease forwards;}
+  @keyframes float-up{to{transform:translateY(-38px); opacity:0;}}
+
+  .shooter-start, .shooter-summary{text-align:center; padding:8px 4px;}
+  .shooter-start .big-emoji{font-size:3.6rem; margin-bottom:6px;}
+  .shooter-start p, .shooter-summary p{color:var(--ink-soft); font-size:0.9rem; line-height:1.6; margin-bottom:14px;}
+  .summary-stats{display:flex; gap:10px; justify-content:center; margin:14px 0;}
+  .summary-stat{background:var(--panel-soft); border-radius:14px; padding:12px 16px; min-width:80px;}
+  .summary-stat .s-num{font-family:var(--font-display); font-weight:800; font-size:1.5rem; color:var(--violet-deep); display:block;}
+  .summary-stat .s-label{font-size:0.7rem; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<div class="stars-bg" id="starsBg"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<div id="app">
+
+  <!-- SPLASH -->
+  <section id="screen-splash" class="screen active">
+    <div class="app-icon">🚀</div>
+    <div>
+      <div class="brand-title">數字銀河大冒險</div>
+      <div class="brand-sub">因數與倍數任務｜五年級上學期數學</div>
+    </div>
+    <div class="brand-badges">
+      <span class="brand-badge">🪐 6 大星球關卡</span>
+      <span class="brand-badge">🐝 蜜蜂射擊小遊戲</span>
+      <span class="brand-badge">🎲 每次題目不一樣</span>
+    </div>
+    <button class="btn-primary" onclick="App.goMap()">開始任務 🚀</button>
+    <div class="splash-hint">適合親子共玩・點一下開始探索</div>
+  </section>
+
+  <!-- MAP -->
+  <section id="screen-map" class="screen">
+    <div class="topbar">
+      <div class="stat-pill">⭐ <span id="mapStarCount">0</span> / 18</div>
+      <div class="icon-btn" onclick="App.resetGame()" title="重新開始">⟳</div>
+    </div>
+    <div class="map-header">
+      <div class="map-title">🌌 銀河任務地圖</div>
+      <div class="map-sub">依序完成星球任務，解鎖下一顆星球！</div>
+    </div>
+
+    <a class="arcade-card" href="bee-shooter.html" style="text-decoration:none;">
+      <div class="arcade-emoji">🐝</div>
+      <div class="arcade-info">
+        <div class="arcade-title">蜜蜂大作戰</div>
+        <div class="arcade-sub">生命值・連擊・道具射擊遊戲・獨立頁面</div>
+      </div>
+      <div class="arcade-go">▶</div>
+    </a>
+
+    <div class="level-path" id="levelPath"></div>
+  </section>
+
+  <!-- LEVEL -->
+  <section id="screen-level" class="screen">
+    <div class="level-header">
+      <div class="icon-btn" onclick="App.goMap()">←</div>
+      <div class="level-title-wrap">
+        <div class="level-title" id="levelTitle">關卡標題</div>
+        <div class="level-progress" id="levelProgress"></div>
+      </div>
+      <div class="stat-pill">⭐ <span id="levelStarCount">0</span></div>
+    </div>
+    <div id="gameArea"></div>
+  </section>
+
+  <!-- LEVEL COMPLETE -->
+  <section id="screen-levelcomplete" class="screen">
+    <div class="complete-emoji">🎉</div>
+    <div class="complete-title" id="clTitle">任務成功！</div>
+    <div class="complete-stars" id="clStars"></div>
+    <div class="complete-sub" id="clSub">你已經收集了這顆星球的知識水晶！</div>
+    <button class="btn-primary" onclick="App.afterComplete()" id="clBtn">前往下一站 →</button>
+    <div class="back-link" onclick="App.goMap()">回到地圖</div>
+  </section>
+
+  <!-- FINALE -->
+  <section id="screen-finale" class="screen">
+    <div class="app-icon" style="font-size:56px;">🏆</div>
+    <div class="brand-title" style="font-size:1.6rem;">銀河任務完成！</div>
+    <div class="brand-sub" id="finaleStars">總共收集 18 / 18 顆星星</div>
+    <div class="badge-shelf" id="badgeShelf"></div>
+    <button class="btn-primary" onclick="App.resetGame()">再玩一次 🔄</button>
+  </section>
+
+</div>
+
+<script>
+/* ============ 共用數學工具 ============ */
+function factorsOf(n){ const f=[]; for(let i=1;i<=n;i++){ if(n%i===0) f.push(i);} return f; }
+function isPrime(n){ if(n<2) return false; for(let i=2;i*i<=n;i++){ if(n%i===0) return false;} return true; }
+function lcmOf(a,b){ function gcd(x,y){return y===0?x:gcd(y,x%y);} return a*b/gcd(a,b); }
+function commonFactors(a,b){ const fa=factorsOf(a),fb=factorsOf(b); return fa.filter(x=>fb.includes(x)); }
+function commonMultiples(a,b,max){ const res=[]; for(let i=1;i*a<=max;i++){ if((i*a)%b===0) res.push(i*a);} return res; }
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randChoice(arr){ return arr[randInt(0,arr.length-1)]; }
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function sample(arr,n){ return shuffle(arr).slice(0, Math.min(n,arr.length)); }
+
+/* ============ 隨機出題產生器（已用大量模擬測試驗證正確性） ============ */
+const FACTOR_TARGETS=[12,16,18,20,24,28,30,32,36,40,42,45,48,50,54,56,60,63,64,72];
+function genFactorRound(used){
+  const pool = FACTOR_TARGETS.filter(t=>!used.includes(t));
+  const target = randChoice(pool.length?pool:FACTOR_TARGETS);
+  const correct = factorsOf(target);
+  const distractPool=[];
+  for(let i=2;i<target;i++){ if(!correct.includes(i)) distractPool.push(i); }
+  const distractors = sample(distractPool, 2);
+  return { prompt:`找出 ${target} 的所有因數`, target, correct, distractors };
+}
+const MULTIPLE_BASES=[4,6,7,8,9,11,12,13];
+function genMultipleRound(used){
+  const pool = MULTIPLE_BASES.filter(b=>!used.includes(b));
+  const base = randChoice(pool.length?pool:MULTIPLE_BASES);
+  const max=90;
+  const full=[]; for(let i=base;i<=max;i+=base) full.push(i);
+  const correct = full.slice(0, Math.min(7, full.length));
+  const distractPool=[]; for(let i=2;i<=max;i++){ if(i%base!==0) distractPool.push(i); }
+  const distractors = sample(distractPool, 4);
+  return { prompt:`找出 ${base} 的倍數`, base, correct, distractors };
+}
+const CF_PAIRS=[[18,24],[20,30],[12,18],[16,24],[15,25],[9,15],[8,12],[10,15],[14,21],[6,10]];
+function genCFRound(used){
+  const pool = CF_PAIRS.filter(p=>!used.some(u=>u[0]===p[0]&&u[1]===p[1]));
+  const pair = randChoice(pool.length?pool:CF_PAIRS);
+  const correct = commonFactors(pair[0],pair[1]);
+  const onlyA = factorsOf(pair[0]).filter(x=>!correct.includes(x));
+  const onlyB = factorsOf(pair[1]).filter(x=>!correct.includes(x));
+  const distractPool = [...new Set([...onlyA,...onlyB])];
+  const distractors = sample(distractPool, Math.min(3, distractPool.length));
+  return { prompt:`${pair[0]} 和 ${pair[1]} 的公因數有哪些？`, pair, correct, distractors };
+}
+const CM_PAIRS=[[4,6],[3,5],[4,10],[6,8],[5,6],[3,4],[2,9],[6,9],[4,5],[3,8]];
+function genCMRound(used){
+  const pool = CM_PAIRS.filter(p=>!used.some(u=>u[0]===p[0]&&u[1]===p[1]));
+  const pair = randChoice(pool.length?pool:CM_PAIRS);
+  const max=60;
+  const correct = commonMultiples(pair[0],pair[1],max);
+  const multA=[]; for(let i=pair[0]; i<=max; i+=pair[0]) if(!correct.includes(i)) multA.push(i);
+  const multB=[]; for(let i=pair[1]; i<=max; i+=pair[1]) if(!correct.includes(i)) multB.push(i);
+  const distractPool=[...new Set([...multA,...multB])];
+  const distractors = sample(distractPool, Math.min(4, distractPool.length));
+  return { prompt:`${pair[0]} 和 ${pair[1]} 的公倍數有哪些？（${max} 以內）`, pair, correct, distractors };
+}
+function genClassifyNumbers(){
+  const primes=[], composites=[];
+  for(let i=2;i<=50;i++){ if(isPrime(i)) primes.push(i); else if(i>=4) composites.push(i); }
+  return shuffle([...sample(primes,6), ...sample(composites,6)]);
+}
+function genBossQ1(){
+  for(let attempt=0; attempt<80; attempt++){
+    const p=randInt(4,9), q=randInt(4,9), product=p*q;
+    const wrongPairs=[]; let tries=0;
+    while(wrongPairs.length<3 && tries<300){
+      tries++;
+      const a=randInt(3,11), b=randInt(3,11);
+      if(a*b===product) continue;
+      if(wrongPairs.some(w=>w[0]===a&&w[1]===b)) continue;
+      wrongPairs.push([a,b]);
+    }
+    if(wrongPairs.length===3) return { p, q, product, wrongPairs };
+  }
+  return { p:6, q:8, product:48, wrongPairs:[[5,9],[4,11],[7,7]] };
+}
+function genBossQ2(){ const n=randInt(11,49); return { n, truth: isPrime(n) }; }
+const LCM_PAIRS=[[4,5],[3,4],[2,7],[3,5],[4,6],[6,8],[2,9],[5,6]];
+function genBossQ3(){
+  const pair = randChoice(LCM_PAIRS);
+  const correct = lcmOf(pair[0],pair[1]);
+  const wrongSet=new Set(); let tries=0;
+  while(wrongSet.size<3 && tries<300){
+    tries++;
+    const cand = correct + randInt(-15,15)*randInt(1,3);
+    if(cand>1 && cand!==correct) wrongSet.add(cand);
+  }
+  return { pair, correct, wrong:[...wrongSet].slice(0,3) };
+}
+
+/* ============ 關卡設定 ============ */
+const LEVELS = [
+  { id:1, title:'因數星球', icon:'🪐', color:'teal', colorDeep:'#159C8C', concept:'因數 Factors', type:'select-rounds', roundCount:3,
+    mascotTip:'找因數的訣竅：想想看哪兩個數字相乘會等於目標數字，把它們兩個都選起來就不會漏掉囉！', gen:genFactorRound, usedKey:(r)=>r.target },
+  { id:2, title:'倍數星系', icon:'🌠', color:'amber', colorDeep:'#E8940A', concept:'倍數 Multiples', type:'select-rounds', roundCount:3,
+    mascotTip:'找倍數的訣竅：把目標數字一直加自己（1倍、2倍、3倍…），清單裡符合的通通選起來！', gen:genMultipleRound, usedKey:(r)=>r.base },
+  { id:3, title:'質數合數分類站', icon:'✨', color:'violet', colorDeep:'#6952E0', concept:'質數與合數', type:'classify',
+    mascotTip:'小知識：質數只能被 1 和自己整除；合數則可以被其他數字整除。（1 很特別，它不是質數也不是合數喔！）' },
+  { id:4, title:'公因數探測站', icon:'🔭', color:'pink', colorDeep:'#E84A85', concept:'公因數', type:'select-rounds', roundCount:2,
+    mascotTip:'公因數就是「兩個數字都有」的因數！先找出各自的因數，再看看哪些數字是重複出現的。', gen:genCFRound, usedKey:(r)=>r.pair },
+  { id:5, title:'公倍數信號塔', icon:'🛰️', color:'teal', colorDeep:'#159C8C', concept:'公倍數', type:'select-rounds', roundCount:2,
+    mascotTip:'公倍數就是「兩個數字都有」的倍數！找到最小的那個公倍數，其他公倍數都會是它的倍數喔。', gen:genCMRound, usedKey:(r)=>r.pair },
+  { id:6, title:'終極大魔王', icon:'👾', color:'pink', colorDeep:'#E84A85', concept:'綜合大挑戰', boss:true,
+    mascotTip:'集合所有學過的本領，一起打倒因數倍數大魔王吧！' },
+];
+
+/* ============ 遊戲狀態 ============ */
+const State = {
+  starsByLevel: {1:0,2:0,3:0,4:0,5:0,6:0},
+  shooterStars: 0,
+  unlockedLevel: 1,
+  currentLevel: null,
+  roundIndex: 0,
+  mistakes: 0,
+  selected: new Set(),
+  classifyState: {},
+  classifyNumbers: [],
+  bossHp: 3,
+  bossQIndex: 0,
+  bossQuestions: [],
+};
+
+/* ============ 音效系統 ============ */
+let audioCtx;
+function ensureAudio(){ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){audioCtx.resume();} }
+function tone(freqStart, freqEnd, duration, type, gainStart, delay){
+  const t = audioCtx.currentTime + (delay||0);
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, t);
+  if(freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd,1), t+duration);
+  gain.gain.setValueAtTime(gainStart!==undefined?gainStart:0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.01, t+duration);
+  osc.start(t); osc.stop(t+duration);
+}
+function playSound(type){
+  try{
+    ensureAudio();
+    if(type==='correct'){ tone(440,880,0.2,'triangle',0.2); }
+    else if(type==='wrong'){ tone(200,150,0.2,'sawtooth',0.2); }
+    else if(type==='win'){ tone(523.25,null,0.16,'sine',0.28); tone(659.25,null,0.16,'sine',0.28,0.12); tone(783.99,null,0.3,'sine',0.28,0.24); }
+    else if(type==='tap'){ tone(320,null,0.08,'sine',0.12); }
+    else if(type==='laser'){ tone(1250,280,0.11,'sawtooth',0.14); }
+    else if(type==='pop'){ tone(700,1300,0.14,'triangle',0.22); }
+    else if(type==='buzz'){ tone(180,90,0.18,'square',0.16); }
+    else if(type==='tick'){ tone(900,null,0.05,'square',0.09); }
+    else if(type==='gostart'){ tone(500,900,0.2,'triangle',0.22); }
+    else if(type==='gameover'){ tone(600,null,0.14,'sawtooth',0.2); tone(450,null,0.14,'sawtooth',0.2,0.14); tone(300,null,0.28,'sawtooth',0.2,0.28); }
+  }catch(e){}
+}
+
+/* ============ 星空背景 ============ */
+function buildStars(){
+  const el = document.getElementById('starsBg');
+  let html='';
+  for(let i=0;i<55;i++){
+    const size=(Math.random()*2.2+1).toFixed(1), top=(Math.random()*100).toFixed(2), left=(Math.random()*100).toFixed(2), delay=(Math.random()*3).toFixed(2);
+    html += `<div class="star-dot" style="width:${size}px;height:${size}px;top:${top}%;left:${left}%;animation-delay:${delay}s;"></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ============ 畫面切換 ============ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ============ 主程式 App ============ */
+const App = {
+  goMap(){
+    playSound('tap');
+    updateStatPills();
+    renderMap();
+    showScreen('screen-map');
+  },
+  resetGame(){
+    if(!confirm('確定要重新開始整個任務嗎？目前的星星進度會被清空。')) return;
+    State.starsByLevel = {1:0,2:0,3:0,4:0,5:0,6:0};
+    State.unlockedLevel = 1;
+    this.goMap();
+  },
+  startLevel(id){
+    const lv = LEVELS.find(l=>l.id===id);
+    if(!lv || id > State.unlockedLevel) return;
+    playSound('tap');
+    State.currentLevel = lv;
+    State.roundIndex = 0;
+    State.mistakes = 0;
+    State.selected = new Set();
+    State.classifyState = {};
+    State.usedRoundKeys = [];
+    State.bossHp = 3;
+    State.bossQIndex = 0;
+    document.getElementById('levelTitle').textContent = lv.icon + ' ' + lv.title;
+    document.getElementById('levelStarCount').textContent = State.starsByLevel[id];
+    if(lv.boss){
+      State.bossQuestions = [genBossQ1(), genBossQ2(), genBossQ3()];
+      renderBoss();
+    } else if(lv.type==='classify'){
+      State.classifyNumbers = genClassifyNumbers();
+      renderClassify();
+    } else {
+      renderRound();
+    }
+    showScreen('screen-level');
+  },
+  afterComplete(){
+    const lv = State.currentLevel;
+    if(lv.id >= LEVELS.length){ renderFinale(); showScreen('screen-finale'); }
+    else { this.startLevel(lv.id+1); }
+  }
+};
+
+function updateStatPills(){
+  const total = Object.values(State.starsByLevel).reduce((a,b)=>a+b,0);
+  const mapEl = document.getElementById('mapStarCount');
+  if(mapEl) mapEl.textContent = total;
+}
+
+/* ============ 地圖渲染 ============ */
+function renderMap(){
+  const wrap = document.getElementById('levelPath');
+  let html='';
+  LEVELS.forEach((lv,idx)=>{
+    const side = idx%2===0 ? 'left' : 'right';
+    const unlocked = lv.id <= State.unlockedLevel;
+    const stars = State.starsByLevel[lv.id];
+    const isCurrent = lv.id === State.unlockedLevel;
+    const colorVar = `--node-color:var(--${lv.color});--node-color-deep:${lv.colorDeep};`;
+    html += `
+    <div class="node-row ${side}">
+      <div class="node-wrap">
+        ${isCurrent ? '<div class="mascot-here">🧑\u200d🚀</div>' : ''}
+        <button class="node-btn ${unlocked?'unlocked':'locked'} ${lv.boss?'boss':''}" style="${unlocked?colorVar:''}" onclick="App.startLevel(${lv.id})">
+          ${unlocked ? lv.icon : '🔒'}
+        </button>
+        <div class="node-label">${lv.title}</div>
+        <div class="node-stars">
+          <span class="${stars>=1?'filled':''}">★</span>
+          <span class="${stars>=2?'filled':''}">★</span>
+          <span class="${stars>=3?'filled':''}">★</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+  updateStatPills();
+}
+
+function renderProgressDots(total, currentIdx){
+  const el = document.getElementById('levelProgress');
+  let html='';
+  for(let i=0;i<total;i++){
+    let cls='progress-dot';
+    if(i<currentIdx) cls+=' done';
+    else if(i===currentIdx) cls+=' current';
+    html+=`<div class="${cls}"></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ============ 選擇題型 ============ */
+function renderRound(){
+  const lv = State.currentLevel;
+  renderProgressDots(lv.roundCount, State.roundIndex);
+  State.selected = new Set();
+  const round = lv.gen(State.usedRoundKeys);
+  State.usedRoundKeys.push(lv.usedKey(round));
+  State.currentCorrectSet = round.correct;
+
+  const options = shuffle([...round.correct, ...round.distractors]);
+  const area = document.getElementById('gameArea');
+  let pairHtml='';
+  if(round.pair){ pairHtml = `<div class="prompt-pair"><div class="pair-num">${round.pair[0]}</div><div class="pair-num">${round.pair[1]}</div></div>`; }
+  area.innerHTML = `
+    <div class="card">
+      <div class="concept-tag">💡 ${lv.concept}</div>
+      <div class="prompt-text">${round.prompt}</div>
+      ${pairHtml}
+      <div class="option-grid" id="optionGrid">
+        ${options.map(n=>`<div class="opt-card" data-val="${n}" onclick="onOptionTap(this,${n})">${n}</div>`).join('')}
+      </div>
+      <div class="mascot-tip"><div class="mascot-face">🧑‍🚀</div><div>${lv.mascotTip}</div></div>
+      <div class="submit-bar"><button class="btn-submit" onclick="checkRoundAnswer()">確認答案 ✅</button></div>
+      <div class="feedback-msg" id="feedbackMsg"></div>
+    </div>
+  `;
+}
+function onOptionTap(el, val){
+  playSound('tap');
+  if(State.selected.has(val)){ State.selected.delete(val); el.classList.remove('selected'); }
+  else { State.selected.add(val); el.classList.add('selected'); }
+}
+function checkRoundAnswer(){
+  const correctSet = State.currentCorrectSet;
+  const userArr = Array.from(State.selected).sort((a,b)=>a-b);
+  const correctArr = [...correctSet].sort((a,b)=>a-b);
+  const isCorrect = userArr.length===correctArr.length && userArr.every((v,i)=>v===correctArr[i]);
+  const feedback = document.getElementById('feedbackMsg');
+  if(isCorrect){
+    playSound('correct');
+    feedback.className='feedback-msg ok'; feedback.textContent='🎉 太棒了！答對了！';
+    document.querySelectorAll('.opt-card').forEach(c=>c.classList.add('disabled'));
+    setTimeout(()=>{
+      const lv = State.currentLevel;
+      State.roundIndex++;
+      if(State.roundIndex < lv.roundCount){ renderRound(); } else { finishLevel(); }
+    },1100);
+  } else {
+    playSound('wrong'); State.mistakes++;
+    feedback.className='feedback-msg bad'; feedback.textContent='❌ 還差一點點，再檢查看看有沒有漏掉或選錯喔！';
+    document.querySelectorAll('.opt-card.selected').forEach(c=>{ c.classList.add('wrong-flash'); setTimeout(()=>c.classList.remove('wrong-flash'),450); });
+  }
+}
+
+/* ============ 質數合數分類題型 ============ */
+function renderClassify(){
+  const lv = State.currentLevel;
+  renderProgressDots(1,0);
+  State.classifyState = {};
+  const area = document.getElementById('gameArea');
+  area.innerHTML = `
+    <div class="card">
+      <div class="concept-tag">💡 ${lv.concept}</div>
+      <div class="prompt-text">請判斷每個數字是「質數」還是「合數」</div>
+      <div class="classify-list" id="classifyList">
+        ${State.classifyNumbers.map(n=>`
+          <div class="classify-row">
+            <div class="classify-num">${n}</div>
+            <div class="classify-btns">
+              <button class="classify-btn" id="p-${n}" onclick="setClassify(${n},'prime')">質數</button>
+              <button class="classify-btn" id="c-${n}" onclick="setClassify(${n},'composite')">合數</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="mascot-tip"><div class="mascot-face">🧑‍🚀</div><div>${lv.mascotTip}</div></div>
+      <div class="submit-bar"><button class="btn-submit" onclick="checkClassifyAnswer()">確認答案 ✅</button></div>
+      <div class="feedback-msg" id="feedbackMsg"></div>
+    </div>
+  `;
+}
+function setClassify(n, type){
+  playSound('tap');
+  State.classifyState[n] = type;
+  document.getElementById('p-'+n).classList.toggle('active-prime', type==='prime');
+  document.getElementById('c-'+n).classList.toggle('active-composite', type==='composite');
+}
+function checkClassifyAnswer(){
+  let allCorrect = true, allAnswered = true;
+  State.classifyNumbers.forEach(n=>{
+    const ans = State.classifyState[n];
+    if(!ans){ allAnswered=false; return; }
+    if(ans !== (isPrime(n)?'prime':'composite')) allCorrect = false;
+  });
+  const feedback = document.getElementById('feedbackMsg');
+  if(!allAnswered){ feedback.className='feedback-msg bad'; feedback.textContent='📝 每個數字都要選擇「質數」或「合數」喔！'; return; }
+  if(allCorrect){
+    playSound('correct');
+    feedback.className='feedback-msg ok'; feedback.textContent='🎉 全部答對！你是質數合數大師！';
+    document.querySelectorAll('.classify-btn').forEach(b=>b.style.pointerEvents='none');
+    setTimeout(()=>finishLevel(),1100);
+  } else {
+    playSound('wrong'); State.mistakes++;
+    feedback.className='feedback-msg bad'; feedback.textContent='❌ 有些分類不太對，再想想看質數的定義喔！';
+  }
+}
+
+/* ============ Boss 題型 ============ */
+function renderBoss(){
+  const lv = State.currentLevel;
+  renderProgressDots(State.bossQuestions.length, State.bossQIndex);
+  const qd = State.bossQuestions[State.bossQIndex];
+  let q, choices, correctIndex;
+  if(State.bossQIndex===0){
+    q = `${qd.product} 可以由哪兩個因數相乘得到？`;
+    const all = shuffle([[qd.p,qd.q], ...qd.wrongPairs]);
+    correctIndex = all.findIndex(pr=>pr[0]===qd.p && pr[1]===qd.q);
+    choices = all.map(pr=>pr[0]+' × '+pr[1]);
+  } else if(State.bossQIndex===1){
+    q = `${qd.n} 是質數還是合數？`;
+    choices = ['質數','合數'];
+    correctIndex = qd.truth ? 0 : 1;
+  } else {
+    q = `${qd.pair[0]} 和 ${qd.pair[1]} 的最小公倍數是多少？`;
+    const all = shuffle([qd.correct, ...qd.wrong]);
+    correctIndex = all.indexOf(qd.correct);
+    choices = all.map(String);
+  }
+  State.bossCorrectIndex = correctIndex;
+  const area = document.getElementById('gameArea');
+  const hpPct = (State.bossHp/3*100);
+  area.innerHTML = `
+    <div class="card">
+      <div class="boss-wrap">
+        <div class="boss-emoji">👾</div>
+        <div class="boss-hp-bar"><div class="boss-hp-fill" style="width:${hpPct}%"></div></div>
+      </div>
+      <div class="boss-q-label">第 ${State.bossQIndex+1} 關 / 共 ${State.bossQuestions.length} 關</div>
+      <div class="prompt-text" style="margin-top:6px;">${q}</div>
+      <div class="choice-grid">${choices.map((c,i)=>`<div class="choice-card" onclick="onBossChoice(${i})">${c}</div>`).join('')}</div>
+      <div class="mascot-tip"><div class="mascot-face">🧑‍🚀</div><div>${lv.mascotTip}</div></div>
+      <div class="feedback-msg" id="feedbackMsg"></div>
+    </div>
+  `;
+}
+function onBossChoice(idx){
+  const feedback = document.getElementById('feedbackMsg');
+  if(idx === State.bossCorrectIndex){
+    playSound('correct'); State.bossHp--;
+    feedback.className='feedback-msg ok'; feedback.textContent='💥 命中！大魔王受傷了！';
+    setTimeout(()=>{
+      State.bossQIndex++;
+      if(State.bossQIndex < State.bossQuestions.length && State.bossHp>0){ renderBoss(); } else { finishLevel(); }
+    },900);
+  } else {
+    playSound('wrong'); State.mistakes++;
+    feedback.className='feedback-msg bad'; feedback.textContent='❌ 沒打中，再想想看！';
+  }
+}
+
+/* ============ 結算 ============ */
+function finishLevel(){
+  playSound('win');
+  const lv = State.currentLevel;
+  let stars = 3;
+  if(State.mistakes>=3) stars=1; else if(State.mistakes>=1) stars=2;
+  if(stars > State.starsByLevel[lv.id]) State.starsByLevel[lv.id] = stars;
+  if(lv.id === State.unlockedLevel && State.unlockedLevel < LEVELS.length){ State.unlockedLevel = lv.id+1; }
+  document.getElementById('clTitle').textContent = lv.boss ? '👾 大魔王擊敗！' : '🎉 任務成功！';
+  document.getElementById('clSub').textContent = lv.boss ? '你完成了所有銀河任務，太厲害了！' : `你已經收集了「${lv.title}」的知識水晶！`;
+  document.getElementById('clStars').innerHTML = [1,2,3].map(i=>`<span class="${i<=stars?'earned':''}">★</span>`).join('');
+  document.getElementById('clBtn').textContent = (lv.id>=LEVELS.length) ? '查看最終成果 🏆' : '前往下一站 →';
+  launchConfetti();
+  showScreen('screen-levelcomplete');
+}
+function renderFinale(){
+  const total = Object.values(State.starsByLevel).reduce((a,b)=>a+b,0);
+  document.getElementById('finaleStars').textContent = `總共收集 ${total} / 18 顆星星`;
+  document.getElementById('badgeShelf').innerHTML = LEVELS.map(lv=>`<div class="badge-item">${lv.icon}<span class="b-label">${lv.title}</span></div>`).join('');
+  launchConfetti(true);
+}
+function launchConfetti(big){
+  const colors=['#2DD4BF','#FDBA3B','#FF6FA5','#8B7CF6','#FFE066'];
+  const count = big?60:34;
+  for(let i=0;i<count;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    const size=Math.random()*7+5;
+    el.style.width=size+'px'; el.style.height=(size*0.5)+'px'; el.style.left=(Math.random()*100)+'vw';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const duration=Math.random()*1.5+2;
+    el.style.animationDuration=duration+'s'; el.style.opacity='0.95';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), duration*1000+200);
+  }
+}
+
+/* ============ 初始化 ============ */
+buildStars();
+</script>
+</body>
+</html>
